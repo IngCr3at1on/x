@@ -58,20 +58,20 @@ func WithCancel(ctx context.Context) (context.Context, context.CancelFunc) {
 
 // StartWith starts a blocking function with a context.Context and
 // context.CancelFunc from WithCancel.
-func StartWith(f func() error) error {
+func StartWith(f func(ctx context.Context) error) error {
 	return StartWithContext(context.Background(), f)
 }
 
 // StartWithContext starts a blocking function, it creates a new
 // context.Context and context.CancelFunc from WithCancel using
 // the provided context.Context as a base.
-func StartWithContext(ctx context.Context, f func() error) error {
+func StartWithContext(ctx context.Context, f func(ctx context.Context) error) error {
 	ctx, cancel := WithCancel(ctx)
 	errCh := make(chan error, 1)
 	defer close(errCh)
 	go func() {
 		defer cancel()
-		err := f()
+		err := f(ctx)
 		if err != nil {
 			errCh <- err
 			return
