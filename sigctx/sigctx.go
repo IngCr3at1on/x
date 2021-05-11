@@ -79,12 +79,10 @@ func StartWithContext(ctx context.Context, f func(ctx context.Context) error) er
 		_logger.Log(`f finished, cancelling context`)
 	}()
 
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case err := <-errCh:
-			return err
-		}
+	select {
+	case <-ctx.Done():
+		return nil
+	case err := <-errCh:
+		return err
 	}
 }
