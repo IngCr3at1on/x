@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 )
 
@@ -69,7 +70,11 @@ func StartWithContext(ctx context.Context, f func(ctx context.Context) error) er
 	ctx, cancel := WithCancel(ctx)
 	errCh := make(chan error, 1)
 	defer close(errCh)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		defer cancel()
 		err := f(ctx)
 		if err != nil {
@@ -81,8 +86,11 @@ func StartWithContext(ctx context.Context, f func(ctx context.Context) error) er
 
 	select {
 	case <-ctx.Done():
-		return nil
+		break
 	case err := <-errCh:
 		return err
 	}
+
+	wg.Wait()
+	return nil
 }
