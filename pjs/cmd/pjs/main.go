@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/ingcr3at1on/x/pjs"
+	"github.com/ingcr3at1on/x/pjs/internal/env"
 	"github.com/ingcr3at1on/x/sigctx"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgconn/stmtcache"
@@ -42,7 +43,14 @@ func main() {
 			return err
 		}
 
-		pc, err := pgxpool.ParseConfig(*dsnF)
+		var dsn string
+		if *dsnF != `` {
+			dsn = *dsnF
+		} else {
+			dsn = env.ParseAlternateSettings()
+		}
+
+		pc, err := pgxpool.ParseConfig(dsn)
 		if err != nil {
 			return fmt.Errorf("pgxpool.ParseConfig -- %w", err)
 		}

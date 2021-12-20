@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/ingcr3at1on/x/pjs/internal/env"
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +24,9 @@ func initTable(ctx context.Context, tb testing.TB, pool *pgxpool.Pool) {
 }
 
 func initPool(ctx context.Context, tb testing.TB) *pgxpool.Pool {
-	pc, err := pgxpool.ParseConfig(``)
+	dsn := env.ParseAlternateSettings()
+
+	pc, err := pgxpool.ParseConfig(dsn)
 	require.NoError(tb, err)
 
 	pool, err := pgxpool.ConnectConfig(ctx, pc)
