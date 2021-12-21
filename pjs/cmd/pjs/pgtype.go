@@ -207,6 +207,16 @@ func addToOutput(rec pjs.Receiver) interface{} {
 		default:
 			return val.Elements
 		}
+	case pgtype.NameOID:
+		val := rec.Val.(*pgtype.Name)
+		switch val.Status {
+		case pgtype.Null:
+			return nil
+		case pgtype.Undefined:
+			return ``
+		default:
+			return val.String
+		}
 	default:
 		return rec.Val
 	}

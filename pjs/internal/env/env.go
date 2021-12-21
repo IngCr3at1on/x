@@ -20,8 +20,7 @@ func ParseAlternateSettings() string {
 
 	var builder strings.Builder
 	for envname, realname := range nameMap {
-		value := os.Getenv(envname)
-		if value != "" {
+		if value, ok := os.LookupEnv(envname); ok {
 			builder.WriteString(realname + "=" + value + " ")
 		}
 	}

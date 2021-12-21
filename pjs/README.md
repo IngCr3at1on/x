@@ -21,6 +21,20 @@ For more complex queries consider writing to a file and reading with cat.
 
 pjs also supports passing a dsn string directly instead of using env variables by use of the `--dsn` (or `-d`) flag.
 
+## Custom Queries
+
+Experimental support for custom queries is baked into the cobra functionality; because of this the location for storing custom queries cannot be controlled from flags. The env value `PJS_CUSTOM_QUERIES` can be set to use a specific directory otherwise the default is `$HOME/.pjs/queries`.
+
+Custom queries are read via HCL. The `template` parameter is a Go template, the template values correspond to the args which are processed in order against the input of the command.
+
+A simple query is included in `custom_queries`. A more complex query might use heredoc to write the template parameter across multiple lines.
+
+    query "indexes-for-table <table>" {
+        description = "Returns a list of indexes for the provided table name."
+        template = "SELECT * FROM pg_indexes WHERE tablename = '{{ .Table }}';"
+        args = [ "Table" ]
+    }
+
 ## Tests
 
     docker-compose up -d
