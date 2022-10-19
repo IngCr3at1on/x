@@ -4,6 +4,6 @@ Written as a counterpart to [pjs](https://github.com/IngCr3at1on/x/tree/master/p
 
 For example adding the comment `# with-env aliases: sandbox` would cause with-env to select this file with if provided the input `sandbox`.
 
-Supports multiple aliases per file, eq: `# with-env aliases: sandbox`.
+Supports multiple aliases per file, eq: `# with-env aliases: dev,develop`.
 
 Leverages godotenv for _some_ functionality while mimicking other non-exported functionality.
