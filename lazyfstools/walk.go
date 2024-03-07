@@ -36,3 +36,25 @@ func Walk(afs afero.Fs, abs string, fileProcessor ProcessFunc, dirProcessor Proc
 		return fileProcessor(afs, path, info)
 	})
 }
+
+func SkipDirs(dirs ...string) ProcessFunc {
+	if len(dirs) > 0 {
+		return skipDirs(dirs...)
+	}
+
+	return func(_ afero.Fs, _ string, _ fs.FileInfo) error {
+		return fs.SkipDir
+	}
+}
+
+func skipDirs(dirs ...string) ProcessFunc {
+	return func(afs afero.Fs, path string, _ fs.FileInfo) error {
+		for _, dir := range dirs {
+			if filepath.Dir(dir) == filepath.Dir(path) {
+				return fs.SkipDir
+			}
+		}
+
+		return nil
+	}
+}
