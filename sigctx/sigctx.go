@@ -8,66 +8,29 @@ import (
 	"syscall"
 )
 
-type (
-	// Logger is based on the standard logger proposals discussed in detail, linked below
-	// https://docs.google.com/document/d/1oTjtY49y8iSxmM9YBaz2NrZIlaXtQsq3nQMd-E0HtwM/edit#
-	Logger interface {
-		// Log is a flexible log function described in the standard logger proposals.
-		Log(...interface{}) error
-	}
-
-	noOpLogger struct{}
-)
-
-var _logger Logger = &noOpLogger{}
-
-func (*noOpLogger) Log(_ ...interface{}) error {
-	return nil
+// Context calls signal.NotifyContext with the following signals:
+// syscall.SIGABRT, syscall.SIGINT, syscall.SIGTERM, os.Interrupt and os.Kill
+func Context(ctx context.Context) (context.Context, context.CancelFunc) {
+	return signal.NotifyContext(ctx, syscall.SIGABRT, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 }
 
-// SetLogger sets a Logger interface for sigctx to use.
-func SetLogger(logger Logger) {
-	if logger != nil {
-		_logger = logger
-	}
+// With calls Context and Do in succession.
+func With(f func(ctx context.Context) error) error {
+	ctx, cancel := Context(context.Background())
+	defer cancel()
+	return Do(ctx, cancel, f)
 }
 
-// FromContext wraps the provided context.Context with a context.CancelFunc
-// that has cancel signal monitoring attached to it and returns the
-// context.Context.
-func FromContext(ctx context.Context) context.Context {
-	ctx, _ = WithCancel(ctx)
-	return ctx
+// WithContext calls Context and Do in succession using the given context as the parent context.
+func WithContext(ctx context.Context, f func(ctx context.Context) error) error {
+	ctx, cancel := Context(ctx)
+	defer cancel()
+	return Do(ctx, cancel, f)
 }
 
-// WithCancel wraps the provided context.Context with a context.CancelFunc
-// that has cancel signal monitoring attached to it.
-func WithCancel(ctx context.Context) (context.Context, context.CancelFunc) {
-	sc := make(chan os.Signal, 1)
-
-	signal.Notify(sc, syscall.SIGABRT, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
-
-	ctx, cancel := context.WithCancel(ctx)
-	go func() {
-		sig := <-sc
-		_logger.Log(sig.String() + ` signal received`)
-		cancel()
-	}()
-
-	return ctx, cancel
-}
-
-// StartWith starts a blocking function with a context.Context and
-// context.CancelFunc from WithCancel.
-func StartWith(f func(ctx context.Context) error) error {
-	return StartWithContext(context.Background(), f)
-}
-
-// StartWithContext starts a blocking function, it creates a new
-// context.Context and context.CancelFunc from WithCancel using
-// the provided context.Context as a base.
-func StartWithContext(ctx context.Context, f func(ctx context.Context) error) error {
-	ctx, cancel := WithCancel(ctx)
+// Do calls f in a new goroutine and waits for it to complete or the context to be cancelled.
+// It's expected that the provided context have signals attached to it using Context or signal.NotifyContext.
+func Do(ctx context.Context, cancel context.CancelFunc, f func(ctx context.Context) error) error {
 	errCh := make(chan error, 1)
 	defer close(errCh)
 
@@ -81,7 +44,6 @@ func StartWithContext(ctx context.Context, f func(ctx context.Context) error) er
 			errCh <- err
 			return
 		}
-		_logger.Log(`f finished, cancelling context`)
 	}()
 
 	select {
